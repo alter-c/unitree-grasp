@@ -1,0 +1,6 @@
+pyrealsense2
+zmq
+ultralytics
+
+# casadi
+# pinocchio
