@@ -64,6 +64,8 @@ class G1JointIndex:
 
 class Custom:
     def __init__(self):
+        ChannelFactoryInitialize(0)
+
         self.time_ = 0.0
         self.control_dt_ = 0.02  
         self.duration_ = 3.0   

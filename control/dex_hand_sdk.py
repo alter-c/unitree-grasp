@@ -22,7 +22,6 @@ kTopicDex3RightState = "rt/dex3/right/state"
 
 class Dex3_1_DirectController:
     def __init__(self, fps=100.0, Unit_Test=True):
-        print("[DexHandController] Initialize Dex3_1_Controller...")
         self.fps = fps
         
         if not Unit_Test:
@@ -61,6 +60,8 @@ class Dex3_1_DirectController:
         self.close_left_target = [-0.02, 0.1, 1.3, -1.3, -1.3, -1.3, -1.3]
         self.open_right_target = [0.02, 0.8, -0.1, 0.1, 0.1, 0.1, 0.1]
         self.close_right_target = [0.02, -0.1, -1.3, 1.3, 1.3, 1.3, 1.3]
+        
+        print("[DexHandController] Dex3-1 hand sdk init done..")
 
     def _init_hand_msg(self, msg, joint_indices):
         for id in joint_indices:
