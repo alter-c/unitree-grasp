@@ -1,5 +1,7 @@
 pyrealsense2
 zmq
+fastapi
+uvicorn
 ultralytics
 
 # casadi

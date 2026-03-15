@@ -86,9 +86,18 @@ class ActionExecutor:
         coords format: [x, y, z]
         """
         if target_coords is None:
-            print("[ActionExecutor] Grasp target is None.")
-            return
-        
+            print("[ActionExecutor] Grasp target is None!")
+            return False
+        elif target_coords[0] < 0:
+            print("[ActionExecutor] Grasp target is negative in x direction!")
+            return False
+        elif target_coords[0] < 0.1:
+            print("[ActionExecutor] Grasp target is too close!")
+            return False
+        elif target_coords[0] > 0.45:
+            print("[ActionExecutor] Grasp target is too far!")
+            return False
+
         arm_flag = "left" if target_coords[1] > 0 else "right"
         flag = 1 if arm_flag == "left" else -1
         
@@ -110,24 +119,26 @@ class ActionExecutor:
             ]
             self._single_arm_pos_control(mid_pos_1, arm_flag)
 
-            mid_pos_2 = [
-                target_coords[0], target_coords[1]+0.05*flag, target_coords[2]+0.1,
-                0.0, 0.0, 0.0
-            ]
-            self._single_arm_pos_control(mid_pos_2, arm_flag)
+            # mid_pos_2 = [
+            #     target_coords[0], target_coords[1]+0.05*flag, target_coords[2]+0.1,
+            #     0.0, 0.0, 0.0
+            # ]
+            # self._single_arm_pos_control(mid_pos_2, arm_flag)
 
             # [Stage 3] Move arm to grasp position and close hand
             grasp_pos = [
-                target_coords[0]+0.05, target_coords[1]-0.05*flag, target_coords[2]+0.05,
+                target_coords[0]+0.05, target_coords[1], target_coords[2]+0.05,
                 0.0, 0.0, 0.0
             ]
             self._single_arm_pos_control(grasp_pos, arm_flag)
             self.hand_ctrl.close_hand(arm_flag)
 
             print("[ActionExecutor] Grasp completed.")
+            return True
 
         except Exception as e:
             print("[ActionExecutor] Grasp error:", e)
+            return False
 
     def retract(self, arm_flag):
         if arm_flag == 'left':
@@ -144,14 +155,14 @@ class ActionExecutor:
             # [Stage 1] Close hand and move arm to mid pos
             self.hand_ctrl.close_hand(arm_flag)
             mid_pos = [
-                0.3, 0.25*flag, 0.2,
+                0.3, 0.25*flag, 0.25,
                 0.0, 0.0, 0.0
             ]
             self._single_arm_pos_control(mid_pos, arm_flag)
 
             # [Stage 2] Move arm to prepare position
             pre_pos = [
-                0.1, 0.25*flag, 0.1,
+                0.05, 0.3*flag, 0.15,
                 0.0, 0.0, 0.0
             ] 
             self._single_arm_pos_control(pre_pos, arm_flag)

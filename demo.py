@@ -21,7 +21,9 @@ if __name__ == "__main__":
                 for detection in detections:
                     if detection["class"] in interested_classes:
                         coords = detection["world"]
-                        print(f"Detected {detection['class']}.")
+                        if coords[0] > 1:
+                            continue
+                        print(f"Detected {detection['class']} at coords: {coords}.")
                 if coords is not None:
                     break
                 else:
@@ -31,14 +33,17 @@ if __name__ == "__main__":
             input("Press any key to continue.")
 
             # Step 3: Execute grasping action
-            executor.grasp(coords)
+            suc = executor.grasp(coords)
 
-            # Step 4: Execute other action
-            arm_flag = "left" if coords[1] > 0 else "right"
-            executor.hand_ctrl.open_hand(arm_flag) # here just open hand
+            if suc:
+                # Step 4: Execute other action
+                arm_flag = "left" if coords[1] > 0 else "right"
+                executor.hand_ctrl.open_hand(arm_flag) # here just open hand
 
-            # Step 5: Retract arm
-            executor.retract(arm_flag)
+                # Step 5: Retract arm
+                executor.retract(arm_flag)
+            else:
+                print("Grasping failed. Retrying...")
 
             user_input = input("Press 'n' to grasp next object, otherwise exit.")
             if user_input.lower() != 'n':
