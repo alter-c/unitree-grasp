@@ -1,4 +1,5 @@
 import sys
+import time
 import math
 import numpy as np
 import pinocchio as pin
@@ -6,6 +7,8 @@ from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from control.g1_arm_sdk import Custom
 from control.g1_arm_ik import G1_29_ArmIK
 from control.dex_hand_sdk import Dex3_1_DirectController
+
+from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
 
 
 class ActionExecutor:
@@ -15,6 +18,11 @@ class ActionExecutor:
         self.arm_ik_solver = G1_29_ArmIK()
         
         self.arm_ctrl.Init()
+
+        ChannelFactoryInitialize(0, "eth0")
+        self.sport_client = LocoClient()  
+        self.sport_client.SetTimeout(5.0)
+        self.sport_client.Init()
 
         self.kPi = math.pi
 
@@ -58,7 +66,7 @@ class ActionExecutor:
             pin.utils.rpyToMatrix(np.array([0, 0, 0])),
             np.array([0.25, 0.25*flag, 0.1]),
         )
-        q_another = [0, self.kPi/9*flag, 0, self.kPi/2, 0, 0, 0, ]
+        q_another = [0, -self.kPi/9*flag, 0, self.kPi/2, 0, 0, 0, ]
 
         try:
             if flag == 1:
@@ -81,6 +89,14 @@ class ActionExecutor:
         except Exception as e:
             print("[ActionExecutor] Arm joint control error:", e)
 
+    def move_forward(self, distance, speed=0.3):
+        try:
+            duration = distance / speed
+            self.sport_client.SetVelocity(speed, 0, 0, duration)
+            time.sleep(duration+2) # wait for the movement to complete
+        except Exception as e:
+            print("[ActionExecutor] Move forward error:", e)
+
     def grasp(self, target_coords):
         """
         coords format: [x, y, z]
@@ -102,7 +118,7 @@ class ActionExecutor:
         flag = 1 if arm_flag == "left" else -1
         
         try:
-            print("[ActionExecutor] Grasping at coords: ", target_coords, " with ", arm_flag, " arm.")
+            print("[ActionExecutor] Grasping at coords: ", target_coords, " with", arm_flag, "arm.")
 
             # [Stage 1] Move arm to pre-grasp position and open hand
             pre_pos = [
@@ -150,7 +166,7 @@ class ActionExecutor:
             return
         
         try:
-            print("[ActionExecutor] Retracting ", arm_flag, " arm.")
+            print("[ActionExecutor] Retracting", arm_flag, "arm.")
 
             # [Stage 1] Close hand and move arm to mid pos
             self.hand_ctrl.close_hand(arm_flag)
@@ -168,7 +184,7 @@ class ActionExecutor:
             self._single_arm_pos_control(pre_pos, arm_flag)
 
             # [Stage 3] Put arm down and release hand and arm
-            self.release()
+            self.arm_ctrl.Release()
 
             print("[ActionExecutor] Retract completed.")
 
@@ -182,8 +198,11 @@ class ActionExecutor:
         
 if __name__ == "__main__":
     executor = ActionExecutor()
-    target_coords = [0.4, -0.1, 0.1]
-    executor.grasp(target_coords)
-    executor.retract("left")
+    while True:
+        executor.move_forward(0.5)
+        target_coords = [0.35, -0.1, 0.1]
+        executor.grasp(target_coords)
+        executor.retract("right")
+        input()
 
 

@@ -70,7 +70,7 @@ class Dex3_1_DirectController:
             msg.motor_cmd[id].q = 0.0
             msg.motor_cmd[id].dq = 0.0
             msg.motor_cmd[id].tau = 0.0
-            msg.motor_cmd[id].kp = 1.0
+            msg.motor_cmd[id].kp = 1.5
             msg.motor_cmd[id].kd = 0.2
 
     class _RIS_Mode:

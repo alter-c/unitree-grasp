@@ -7,32 +7,41 @@ executor = ActionExecutor()
 detector = YOLODetector("./models/yolov8s-seg.pt", True)
 detector.start()
 
-interested_classes = ["bottle"]
+target_class = "bottle"
+
 
 if __name__ == "__main__":
     try:
         while True:
+            # Step 1: Detect target class objects
             while True:
-                # Step 1: Detect objects
-                detections = detector.get_latest_detection()
-
-                # Step 2: Filter detections for interested classes
-                coords = None
-                for detection in detections:
-                    if detection["class"] in interested_classes:
-                        coords = detection["world"]
-                        if coords[0] > 1:
-                            continue
-                        print(f"Detected {detection['class']} at coords: {coords}.")
-                if coords is not None:
+                detection = detector.get_interested_detection(target_class)
+                if detection:
+                    coords = detection["world"]
                     break
-                else:
-                    print("No interested objects detected. Retrying...")
-                    time.sleep(1)
+                time.sleep(1)
 
             input("Press any key to continue.")
+            
+            # Step 2: Move to expected distance
+            cur_dis = coords[0]
+            expect_dis = 0.4
+            if cur_dis > expect_dis:
+                executor.move_forward(cur_dis-expect_dis+0.1)
+            else:
+                print("Already within expected distance.")
+
 
             # Step 3: Execute grasping action
+            while True:
+                # Refresh detection to get updated coords
+                detection = detector.get_interested_detection(target_class)
+                if detection:
+                    coords = detection["world"]
+                    break
+                time.sleep(1)
+                
+            input("Press any key to continue.")
             suc = executor.grasp(coords)
 
             if suc:

@@ -40,6 +40,8 @@ class YOLODetector:
         self.capture_ready = mp.Event()
         self.depth_scale = 0.001
 
+        self.interested_classes = ["bottle", "orange"]
+
     def start(self):
         if self.is_running.value:
             return "Already running."
@@ -80,8 +82,30 @@ class YOLODetector:
             self.depth_shm.unlink()
         return "Pipeline stopped."
 
-    def get_latest_detection(self):
+    def get_latest_detections(self):
         return list(self.result_shm)  # copy to avoid race
+
+    def get_interested_detection(self, class_name):
+        if class_name not in self.interested_classes:
+            print(f"[YOLODetector] {class_name} is not in interested classes.")
+            return None
+        # Step 1: Detect target class objects
+        detections = self.get_latest_detections()
+        interested = [d for d in detections if d["class"] == class_name]
+        # Step 2: Get closest detection
+        if interested:
+            target = min(interested, key=lambda d: d["world"][0])  
+            print(f"[YOLODetector] Detected {class_name} at coords: {target['world']}.")
+            if target["world"][0] < 0.0:
+                print(f"[YOLODetector] Ignored {class_name} because invalid distance.")
+                return None
+            elif target["world"][0] > 1.0:
+                print(f"[YOLODetector] Ignored {class_name} because too far.")
+                return None
+            return target
+        else:
+            print("[YOLODetector] No interested objects detected. Retrying...")
+            return None
 
     # ---------------- Capture Loop ----------------
     def _capture_loop(self):
@@ -183,7 +207,7 @@ class YOLODetector:
         try:
             while self.is_running.value:
                 color_frame = color_buf.copy()
-                detections = self.get_latest_detection()
+                detections = self.get_latest_detections()
 
                 for detection in detections:
                     class_name = detection["class"]

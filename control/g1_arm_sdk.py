@@ -169,8 +169,8 @@ class Custom:
 
     def Release(self):
         self.target_joint = [
-            0.0, 0.0, 0.0, kPi/2, 0.0, 0.0, 0.0, 
-            0.0, 0.0, 0.0, kPi/2, 0.0, 0.0, 0.0, 
+            0.0, kPi/9, 0.0, kPi/2, 0.0, 0.0, 0.0, 
+            0.0, -kPi/9, 0.0, kPi/2, 0.0, 0.0, 0.0, 
             0.0, 0.0, 0.0
         ] # set robot back to zero posture
         self.Start(release=True)

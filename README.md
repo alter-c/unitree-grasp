@@ -41,7 +41,7 @@ python demo_api.py
 ```
 Then open a new terminal and you can execute below commands:
 ```bash
-curl '0.0.0.0:8080/api/unitree/grasp' # grasp action
+curl '0.0.0.0:8080/api/unitree/grasp?target=bottle' # grasp action
 
 curl '0.0.0.0:8080/api/unitree/release' # release arm and hand to walk
 ```
