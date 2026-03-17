@@ -60,6 +60,8 @@ class Dex3_1_DirectController:
         self.close_left_target = [-0.02, 0.1, 1.3, -1.3, -1.3, -1.3, -1.3]
         self.open_right_target = [0.02, 0.8, -0.1, 0.1, 0.1, 0.1, 0.1]
         self.close_right_target = [0.02, -0.1, -1.3, 1.3, 1.3, 1.3, 1.3]
+
+        self.object_hand = None # which hand has been used
         
         print("[DexHandController] Dex3-1 hand sdk init done..")
 
@@ -144,6 +146,7 @@ class Dex3_1_DirectController:
         else:
             print("[DexHandController] Invalid hand. Use 'left' or 'right'.")
             return
+        self.object_hand = None
         print(f"[DexHandController] Hand opened.")
     
     def close_hand(self, hand_flag="left"):
@@ -158,6 +161,7 @@ class Dex3_1_DirectController:
         else:
             print("[DexHandController] Invalid hand. Use 'left' or 'right'.")
             return
+        self.object_hand = hand_flag
         print(f"[DexHandController] Hand closed.")
     
     def release_hand(self):

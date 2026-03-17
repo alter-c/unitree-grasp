@@ -108,6 +108,9 @@ class Custom:
         self.lowstate_subscriber = ChannelSubscriber("rt/lowstate", LowState_)
         self.lowstate_subscriber.Init(self.LowStateHandler, 10)
 
+        # init thread
+        self.lowCmdWriteThreadPtr = None
+
         print("[ArmController] G1 arm7 sdk init done.")
 
     def Start(self, release=False):
@@ -126,7 +129,8 @@ class Custom:
 
     def Stop(self):
         # stop control thread
-        self.lowCmdWriteThreadPtr.Wait()
+        if self.lowCmdWriteThreadPtr is not None:
+            self.lowCmdWriteThreadPtr.Wait()
 
     def LowStateHandler(self, msg: LowState_):
         self.low_state = msg
@@ -168,6 +172,9 @@ class Custom:
         self.Stop()
 
     def Release(self):
+        # first stop current thread
+        self.Stop()
+        
         self.target_joint = [
             0.0, kPi/9, 0.0, kPi/2, 0.0, 0.0, 0.0, 
             0.0, -kPi/9, 0.0, kPi/2, 0.0, 0.0, 0.0, 

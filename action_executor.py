@@ -4,11 +4,11 @@ import math
 import numpy as np
 import pinocchio as pin
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
+from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
 from control.g1_arm_sdk import Custom
 from control.g1_arm_ik import G1_29_ArmIK
 from control.dex_hand_sdk import Dex3_1_DirectController
 
-from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
 
 
 class ActionExecutor:
@@ -26,10 +26,16 @@ class ActionExecutor:
 
         self.kPi = math.pi
 
+        # control whether action should be executed
+        self.is_running = False # set True before action
+
     def _arm_pos_control(self, target_left_pos, target_right_pos):
         """
         pos format: [x, y, z, roll, pitch, yaw]
         """
+        if not self.is_running:
+            raise RuntimeError("Executor is not running.")
+
         L_tf_target = pin.SE3(
             pin.utils.rpyToMatrix(np.array(target_left_pos[3:])),
             np.array(target_left_pos[:3]),
@@ -38,18 +44,20 @@ class ActionExecutor:
             pin.utils.rpyToMatrix(np.array(target_right_pos[3:])),
             np.array(target_right_pos[:3]),
         )
-        try:
-            sol_q, sol_tauff = self.arm_ik_solver.solve_ik(L_tf_target.homogeneous, R_tf_target.homogeneous)
-            target_q = sol_q.tolist()[0:14] + [0]*3
-            self.arm_ctrl.Control(target_q)
-        except Exception as e:
-            print("[ActionExecutor] Arm pos control error:", e)
+
+        sol_q, sol_tauff = self.arm_ik_solver.solve_ik(L_tf_target.homogeneous, R_tf_target.homogeneous)
+        target_q = sol_q.tolist()[0:14] + [0]*3
+        self.arm_ctrl.Control(target_q)
+
 
     def _single_arm_pos_control(self, target_pos, arm_flag):
         """
         pos format: [x, y, z, roll, pitch, yaw]
         arm flag: 'left' or 'right'
         """
+        if not self.is_running:
+            raise RuntimeError("Executor is not running.")
+
         if arm_flag == 'left':
             flag = 1
         elif arm_flag == 'right':
@@ -68,34 +76,29 @@ class ActionExecutor:
         )
         q_another = [0, -self.kPi/9*flag, 0, self.kPi/2, 0, 0, 0, ]
 
-        try:
-            if flag == 1:
-                sol_q, sol_tauff = self.arm_ik_solver.solve_ik(tf_target.homogeneous, tf_another.homogeneous)
-                target_q = sol_q.tolist()[0:7] + q_another + [0]*3
-            else:
-                sol_q, sol_tauff = self.arm_ik_solver.solve_ik(tf_another.homogeneous, tf_target.homogeneous)
-                target_q = q_another + sol_q.tolist()[7:14] + [0]*3
-            self.arm_ctrl.Control(target_q)
-        except Exception as e:
-            print("[ActionExecutor] Single arm pos control error:", e)
+
+        if flag == 1:
+            sol_q, sol_tauff = self.arm_ik_solver.solve_ik(tf_target.homogeneous, tf_another.homogeneous)
+            target_q = sol_q.tolist()[0:7] + q_another + [0]*3
+        else:
+            sol_q, sol_tauff = self.arm_ik_solver.solve_ik(tf_another.homogeneous, tf_target.homogeneous)
+            target_q = q_another + sol_q.tolist()[7:14] + [0]*3
+        self.arm_ctrl.Control(target_q)
 
     def _arm_joint_control(self, target_q):
         """
         q format: [q1, q2, ..., q14] without waist
         """
-        try:
-            target_q_full = target_q + [0]*3
-            self.arm_ctrl.Control(target_q_full)
-        except Exception as e:
-            print("[ActionExecutor] Arm joint control error:", e)
+        if not self.is_running:
+            raise RuntimeError("Executor is not running.")
+
+        target_q_full = target_q + [0]*3
+        self.arm_ctrl.Control(target_q_full)
 
     def move_forward(self, distance, speed=0.3):
-        try:
-            duration = distance / speed
-            self.sport_client.SetVelocity(speed, 0, 0, duration)
-            time.sleep(duration+2) # wait for the movement to complete
-        except Exception as e:
-            print("[ActionExecutor] Move forward error:", e)
+        duration = distance / speed
+        self.sport_client.SetVelocity(speed, 0, 0, duration)
+        time.sleep(duration+2) # wait for the movement to complete
 
     def grasp(self, target_coords):
         """
@@ -116,7 +119,8 @@ class ActionExecutor:
 
         arm_flag = "left" if target_coords[1] > 0 else "right"
         flag = 1 if arm_flag == "left" else -1
-        
+
+        self.is_running = True
         try:
             print("[ActionExecutor] Grasping at coords: ", target_coords, " with", arm_flag, "arm.")
 
@@ -150,11 +154,48 @@ class ActionExecutor:
             self.hand_ctrl.close_hand(arm_flag)
 
             print("[ActionExecutor] Grasp completed.")
+
             return True
 
         except Exception as e:
-            print("[ActionExecutor] Grasp error:", e)
+            print("[ActionExecutor] Grasp error: ", e)
             return False
+
+        finally:
+            self.is_running = False
+
+    def hand_over(self):
+        arm_flag = self.hand_ctrl.object_hand
+        if arm_flag is None:
+            print("[ActionExecutor] No object to hand over!")
+            return False
+
+        self.is_running = True
+        try:
+            print("[ActionExecutor] Handing over from", arm_flag, "hand.")
+            # [Stage 1] Move arm to hand over position
+            flag = 1 if arm_flag == "left" else -1
+            hand_over_pos = [
+                0.35, 0.25*flag, 0.15,
+                0.0, 0.0, 0.0
+            ]
+            self._single_arm_pos_control(hand_over_pos, arm_flag)
+
+            # [Stage 2] Wait for a moment and then open hand
+            time.sleep(3)
+            self.hand_ctrl.open_hand(arm_flag)
+
+            # [Stage 3] Release arm and hand
+            self.release()
+
+            print("[ActionExecutor] Hand over completed.")
+            return True
+
+        except Exception as e:
+            print("[ActionExecutor] Hand over error:", e)
+            return False
+        finally:
+            self.is_running = False
 
     def retract(self, arm_flag):
         if arm_flag == 'left':
@@ -164,7 +205,8 @@ class ActionExecutor:
         else:
             print("Invalid arm. Use 'left' or 'right'.")
             return
-        
+
+        self.is_running = True
         try:
             print("[ActionExecutor] Retracting", arm_flag, "arm.")
 
@@ -187,9 +229,13 @@ class ActionExecutor:
             self.arm_ctrl.Release()
 
             print("[ActionExecutor] Retract completed.")
+            return True
 
         except Exception as e:
             print("[ActionExecutor] Retract error:", e)
+            return False
+        finally:
+            self.is_running = False
 
     def release(self):
         self.hand_ctrl.release_hand()
@@ -199,10 +245,16 @@ class ActionExecutor:
 if __name__ == "__main__":
     executor = ActionExecutor()
     while True:
-        executor.move_forward(0.5)
-        target_coords = [0.35, -0.1, 0.1]
-        executor.grasp(target_coords)
-        executor.retract("right")
-        input()
+        try:
+            # executor.move_forward(0.5)
+            target_coords = [0.35, -0.1, 0.1]
+            suc = executor.grasp(target_coords)
+            if suc:
+                executor.retract("right")
+            input()
+        except KeyboardInterrupt:
+            print("[ActionExecutor] User interrupted. Exiting...")
+            executor.release()
+            sys.exit(0)
 
 

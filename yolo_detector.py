@@ -40,7 +40,7 @@ class YOLODetector:
         self.capture_ready = mp.Event()
         self.depth_scale = 0.001
 
-        self.interested_classes = ["bottle", "orange"]
+        self.interested_classes = ["bottle", "orange", "person"]
 
     def start(self):
         if self.is_running.value:
@@ -99,10 +99,8 @@ class YOLODetector:
             if target["world"][0] < 0.0:
                 print(f"[YOLODetector] Ignored {class_name} because invalid distance.")
                 return None
-            elif target["world"][0] > 1.0:
-                print(f"[YOLODetector] Ignored {class_name} because too far.")
-                return None
-            return target
+            else:
+                return target
         else:
             print("[YOLODetector] No interested objects detected. Retrying...")
             return None

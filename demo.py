@@ -31,7 +31,6 @@ if __name__ == "__main__":
             else:
                 print("Already within expected distance.")
 
-
             # Step 3: Execute grasping action
             while True:
                 # Refresh detection to get updated coords
@@ -58,9 +57,11 @@ if __name__ == "__main__":
             if user_input.lower() != 'n':
                 break
 
-    except Exception as e:
+    except KeyboardInterrupt:
         user_input = input("Demo interrupted. Press 'r' to release arm.")
         if user_input.lower() == 'r':
             executor.release()
+    except Exception as e:
+        print(f"An error occurred: {e}")
     finally:
         detector.stop()
