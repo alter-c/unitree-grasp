@@ -2,7 +2,6 @@ import time
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 
 from action_executor import ActionExecutor
 from yolo_detector import YOLODetector
@@ -145,9 +144,8 @@ def unitree_handover():
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# TODO carefully check API safety
 @app.get("/api/unitree/stop")
-def unitree_release():
+def unitree_stop():
     try:
         executor.is_running = False
         executor.release()

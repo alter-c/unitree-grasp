@@ -238,7 +238,6 @@ class ActionExecutor:
 
             # [Stage 3] Release arm and hand
             self.release()
-
             print("[ActionExecutor] Hand over completed.")
             return True
 

@@ -4,7 +4,7 @@ from action_executor import ActionExecutor
 from yolo_detector import YOLODetector
 
 executor = ActionExecutor()
-detector = YOLODetector("./models/yolov8s-seg.pt", True)
+detector = YOLODetector("./models/yolov8s-seg.pt", False)
 detector.start()
 
 target_class = "bottle"

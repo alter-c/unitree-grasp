@@ -34,7 +34,10 @@ cd ../ # for test
 ```
 
 ## Usage
+
 ### Quick Start
+
+#### Web api
 In the terminal and execute:
 ```bash
 python demo_api.py
@@ -43,9 +46,26 @@ Then open a new terminal and you can execute below commands:
 ```bash
 curl '0.0.0.0:8080/api/unitree/grasp?target=bottle' # grasp action
 
+curl '0.0.0.0:8080/api/unitree/regrasp?target=bottle' 
+
 curl '0.0.0.0:8080/api/unitree/handover' # handover object
 
 curl '0.0.0.0:8080/api/unitree/stop' # stop current action and release arm to walk
+```
+
+#### Test whole demo pipeline
+```bash
+python demo.py
+```
+
+#### Test image process
+```bash
+python yolo_detector.py
+```
+
+#### Test action
+```bash
+python action_executor.py
 ```
 
 

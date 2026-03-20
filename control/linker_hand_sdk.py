@@ -22,9 +22,8 @@ O6_Num_Motors = 6
 class O6_DirectJointController:
     """
     直接关节控制版 Linker Hand O6 双手控制器。
-    实例化后即可使用，无需外部初始化任何共享数组或进程。
 
-    示例:
+    使用示例:
         ctrl = O6_DirectJointController()
         ctrl.open_hand("right")
         ctrl.close_hand("both")
@@ -122,7 +121,7 @@ class O6_DirectJointController:
         self._apply_pose(side, self._POSE_CLOSE)
         print(f"[O6] close_hand → {side}")
 
-    def release_hand(self, side: str):
+    def release_hand(self, side: str="both"):
         """
         松开复位（全部伸直）。
         所有关节恢复 1.0（完全伸直），用于释放物体或初始化姿态。
