@@ -146,7 +146,6 @@ class Dex3_1_DirectController:
         else:
             print("[DexHandController] Invalid hand. Use 'left' or 'right'.")
             return
-        self.object_hand = None
         print(f"[DexHandController] Hand opened.")
     
     def close_hand(self, hand_flag="left"):
@@ -161,7 +160,6 @@ class Dex3_1_DirectController:
         else:
             print("[DexHandController] Invalid hand. Use 'left' or 'right'.")
             return
-        self.object_hand = hand_flag
         print(f"[DexHandController] Hand closed.")
     
     def release_hand(self):

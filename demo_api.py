@@ -34,7 +34,6 @@ def unitree_grasp(target: str=None):
             time.sleep(1)
         # coords = [0.36, -0.1, 0.1]
 
-
         input("Check and Press any key to continue.")
 
         # Step 2: Move to expected distance
@@ -62,21 +61,53 @@ def unitree_grasp(target: str=None):
         suc = executor.grasp(coords)
 
         if suc:
-            # Step 4: Execute other action
-            arm_flag = "left" if coords[1] > 0 else "right"
-            # executor.hand_ctrl.open_hand(arm_flag) # here just open hand
-
-            # Step 5: Retract arm with release
-            back_suc = executor.retract(arm_flag)
-            if back_suc:
-                return JSONResponse(status_code=200, content={"message": "Grasp success."})
-            else:
-                print("Retract failed.")
-                return JSONResponse(status_code=500, content={"error": "Retract failed."})
+            return JSONResponse(status_code=200, content={"message": "Grasp success."})
         else:
             print("Grasping failed.")
             return JSONResponse(status_code=500, content={"error": "Grasp failed."})
 
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/unitree/regrasp")
+def unitree_regrasp(target: str=None):
+    try:
+        if target is None:
+            return JSONResponse(status_code=500, content={"error": "No target provided."})
+
+        # Step 1: Detect objects
+        while True:
+            detection = detector.get_interested_detection(target)
+            if detection:
+                coords = detection["world"]
+                if coords[0] > 1.0:
+                    print(f"Detected object is too far for grasp.")
+                    continue
+                else:
+                    break
+            time.sleep(1)
+        # coords = [0.36, -0.1, 0.1]
+
+        input("Check and Press any key to continue.")
+    
+        suc = executor.regrasp(coords)
+        if suc:
+            return JSONResponse(status_code=200, content={"message": "Regrasp success."})
+        else:
+            print("Regrasp failed.")
+            return JSONResponse(status_code=500, content={"error": "Regrasp failed."})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/unitree/retract")
+def unitree_retract():
+    try:
+        suc = executor.retract()
+        if suc:
+            return JSONResponse(status_code=200, content={"message": "Retract success."})
+        else:
+            print("Retract failed.")
+            return JSONResponse(status_code=500, content={"error": "Retract failed."})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

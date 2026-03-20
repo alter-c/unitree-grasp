@@ -42,14 +42,15 @@ if __name__ == "__main__":
                 
             input("Press any key to continue.")
             suc = executor.grasp(coords)
+            input("Press any key to continue.")
 
             if suc:
                 # Step 4: Execute other action
-                arm_flag = "left" if coords[1] > 0 else "right"
-                executor.hand_ctrl.open_hand(arm_flag) # here just open hand
+                # arm_flag = "left" if coords[1] > 0 else "right"
+                # executor.hand_ctrl.open_hand(arm_flag) # here just open hand
 
                 # Step 5: Retract arm
-                executor.retract(arm_flag)
+                executor.retract()
             else:
                 print("Grasping failed. Retrying...")
 

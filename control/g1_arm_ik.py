@@ -9,10 +9,7 @@ import sys
 # import meshcat.geometry as mg
 # from pinocchio.visualize import MeshcatVisualizer  
 
-parent2_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(parent2_dir)
-
-from utils.weighted_moving_filter import WeightedMovingFilter
+from tools.weighted_moving_filter import WeightedMovingFilter
 
 class G1_29_ArmIK:
     def __init__(self, Unit_Test = False, Visualization = False):

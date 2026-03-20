@@ -7,7 +7,7 @@ import base64
 from multiprocessing import Process, Value, Array, shared_memory
 from ultralytics import YOLO
 
-from utils.coordinate_transform import *
+from tools.coordinate_transform import *
 
 class YOLODetector:
     def __init__(self, model_path, visualize=False):

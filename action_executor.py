@@ -7,13 +7,18 @@ from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from unitree_sdk2py.g1.loco.g1_loco_client import LocoClient
 from control.g1_arm_sdk import Custom
 from control.g1_arm_ik import G1_29_ArmIK
-from control.dex_hand_sdk import Dex3_1_DirectController
+# from control.dex_hand_sdk import Dex3_1_DirectController
+from control.linker_hand_sdk import O6_DirectJointController
 
 
 
 class ActionExecutor:
     def __init__(self):
-        self.hand_ctrl = Dex3_1_DirectController()
+        self.hand_ctrl = O6_DirectJointController(
+            left_can_port=None,       # None = 不启用左手
+            right_can_port="can0",
+            fps=50.0,
+        )
         self.arm_ctrl = Custom()
         self.arm_ik_solver = G1_29_ArmIK()
         
@@ -123,6 +128,7 @@ class ActionExecutor:
         self.is_running = True
         try:
             print("[ActionExecutor] Grasping at coords: ", target_coords, " with", arm_flag, "arm.")
+            self.hand_ctrl.object_hand = arm_flag
 
             # [Stage 1] Move arm to pre-grasp position and open hand
             pre_pos = [
@@ -164,6 +170,51 @@ class ActionExecutor:
         finally:
             self.is_running = False
 
+    def regrasp(self, target_coords):
+        """
+        coords format: [x, y, z]
+        """
+        if target_coords is None:
+            print("[ActionExecutor] Grasp target is None!")
+            return False
+        elif target_coords[0] < 0:
+            print("[ActionExecutor] Grasp target is negative in x direction!")
+            return False
+        elif target_coords[0] < 0.1:
+            print("[ActionExecutor] Grasp target is too close!")
+            return False
+        elif target_coords[0] > 0.45:
+            print("[ActionExecutor] Grasp target is too far!")
+            return False
+
+        arm_flag = "left" if target_coords[1] > 0 else "right"
+        flag = 1 if arm_flag == "left" else -1
+
+        self.is_running = True
+        try:
+            print("[ActionExecutor] Regrasping at coords: ", target_coords, " with", arm_flag, "arm.")
+            self.hand_ctrl.object_hand = arm_flag
+
+            # Move arm to grasp position and close hand
+            self.hand_ctrl.open_hand(arm_flag)
+            grasp_pos = [
+                target_coords[0]+0.05, target_coords[1], target_coords[2]+0.05,
+                0.0, 0.0, 0.0
+            ]
+            self._single_arm_pos_control(grasp_pos, arm_flag)
+            self.hand_ctrl.close_hand(arm_flag)
+
+            print("[ActionExecutor] Regrasp completed.")
+
+            return True
+
+        except Exception as e:
+            print("[ActionExecutor] Regrasp error: ", e)
+            return False
+
+        finally:
+            self.is_running = False        
+
     def hand_over(self):
         arm_flag = self.hand_ctrl.object_hand
         if arm_flag is None:
@@ -197,17 +248,17 @@ class ActionExecutor:
         finally:
             self.is_running = False
 
-    def retract(self, arm_flag):
-        if arm_flag == 'left':
-            flag = 1
-        elif arm_flag == 'right':
-            flag = -1
-        else:
-            print("Invalid arm. Use 'left' or 'right'.")
-            return
-
+    def retract(self):
         self.is_running = True
         try:
+            arm_flag = self.hand_ctrl.object_hand
+            if arm_flag == 'left':
+                flag = 1
+            elif arm_flag == 'right':
+                flag = -1
+            else:
+                print("No object inhand, cannot retract!")
+                return
             print("[ActionExecutor] Retracting", arm_flag, "arm.")
 
             # [Stage 1] Close hand and move arm to mid pos
@@ -236,6 +287,7 @@ class ActionExecutor:
             return False
         finally:
             self.is_running = False
+            self.hand_ctrl.object_hand = None
 
     def release(self):
         self.hand_ctrl.release_hand()
@@ -250,7 +302,7 @@ if __name__ == "__main__":
             target_coords = [0.35, -0.1, 0.1]
             suc = executor.grasp(target_coords)
             if suc:
-                executor.retract("right")
+                executor.retract()
             input()
         except KeyboardInterrupt:
             print("[ActionExecutor] User interrupted. Exiting...")
