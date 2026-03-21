@@ -11,7 +11,6 @@ from control.g1_arm_ik import G1_29_ArmIK
 from control.linker_hand_sdk import O6_DirectJointController
 
 
-
 class ActionExecutor:
     def __init__(self):
         self.hand_ctrl = O6_DirectJointController(
@@ -105,6 +104,9 @@ class ActionExecutor:
         self.sport_client.SetVelocity(speed, 0, 0, duration)
         time.sleep(duration+2) # wait for the movement to complete
 
+    def stop_move(self):
+        self.sport_client.SetVelocity(0, 0, 0, 1)
+
     def grasp(self, target_coords):
         """
         coords format: [x, y, z]
@@ -140,7 +142,7 @@ class ActionExecutor:
 
             # [Stage 2] Move arm to some mid pos
             mid_pos_1 = [
-                (0.1+target_coords[0])/2, 0.25*flag, target_coords[2]+0.1,
+                (0.1+target_coords[0])/2, target_coords[1], target_coords[2]+0.2,
                 0.0, 0.0, 0.0
             ]
             self._single_arm_pos_control(mid_pos_1, arm_flag)
@@ -153,8 +155,8 @@ class ActionExecutor:
 
             # [Stage 3] Move arm to grasp position and close hand
             grasp_pos = [
-                target_coords[0]+0.05, target_coords[1], target_coords[2]+0.05,
-                0.0, 0.0, 0.0
+                target_coords[0]-0.05, target_coords[1], target_coords[2]+0.05,
+                0.8*flag, 0.0, 0.0
             ]
             self._single_arm_pos_control(grasp_pos, arm_flag)
             self.hand_ctrl.close_hand(arm_flag)
@@ -215,8 +217,11 @@ class ActionExecutor:
         finally:
             self.is_running = False        
 
-    def hand_over(self):
-        arm_flag = self.hand_ctrl.object_hand
+    def hand_over(self, arm_flag=None):
+        if arm_flag == None:
+            arm_flag = self.hand_ctrl.object_hand
+        
+        # arm_flag = "right"
         if arm_flag is None:
             print("[ActionExecutor] No object to hand over!")
             return False
@@ -233,7 +238,7 @@ class ActionExecutor:
             self._single_arm_pos_control(hand_over_pos, arm_flag)
 
             # [Stage 2] Wait for a moment and then open hand
-            time.sleep(3)
+            time.sleep(1)
             self.hand_ctrl.open_hand(arm_flag)
 
             # [Stage 3] Release arm and hand
@@ -246,11 +251,14 @@ class ActionExecutor:
             return False
         finally:
             self.is_running = False
+            self.hand_ctrl.object_hand = None
 
-    def retract(self):
+    def retract(self, arm_flag=None):
         self.is_running = True
         try:
-            arm_flag = self.hand_ctrl.object_hand
+            if arm_flag == None:
+                arm_flag = self.hand_ctrl.object_hand
+
             if arm_flag == 'left':
                 flag = 1
             elif arm_flag == 'right':
@@ -259,6 +267,7 @@ class ActionExecutor:
                 print("No object inhand, cannot retract!")
                 return
             print("[ActionExecutor] Retracting", arm_flag, "arm.")
+
 
             # [Stage 1] Close hand and move arm to mid pos
             self.hand_ctrl.close_hand(arm_flag)
@@ -277,6 +286,7 @@ class ActionExecutor:
 
             # [Stage 3] Put arm down and release hand and arm
             self.arm_ctrl.Release()
+            # self.hand_ctrl.release_hand()
 
             print("[ActionExecutor] Retract completed.")
             return True
@@ -286,7 +296,6 @@ class ActionExecutor:
             return False
         finally:
             self.is_running = False
-            self.hand_ctrl.object_hand = None
 
     def release(self):
         self.hand_ctrl.release_hand()

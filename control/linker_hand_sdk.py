@@ -48,8 +48,9 @@ class O6_DirectJointController:
         )
         # 初始化常量
         self._POSE_RELEASE = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]    # 全部伸直复位
-        self._POSE_OPEN    = [1.0, 0.3, 1.0, 1.0, 1.0, 1.0]    # 拇指侧摆内收，其余伸直
-        self._POSE_CLOSE   = [0.5, 0.3, 0.25, 0.25, 0.25, 0.25]  # 弯曲约 75%，用于抓取
+        self._POSE_OPEN    = [0.8, 0.1, 1.0, 1.0, 1.0, 1.0]    # 拇指侧摆内收，其余伸直
+        # self._POSE_CLOSE   = [0.5, 0.1, 0.25, 0.25, 0.25, 0.25]  # 弯曲约 75%，用于抓取
+        self._POSE_CLOSE   = [0.7, 0.1, 0.7, 0.7, 0.7, 0.7]  # 弯曲约 75%，用于抓取
 
         self._HAND_SIDES = ("left", "right", "both")
         self.object_hand = None
@@ -164,10 +165,10 @@ class O6_DirectJointController:
         assert side in self._HAND_SIDES, \
             f"side 必须为 {self._HAND_SIDES}，当前为 '{side}'"
         with self._joint_cmd.get_lock():
-            if side in ("left", "both"):
-                self._joint_cmd[:O6_Num_Motors] = pose
             if side in ("right", "both"):
                 self._joint_cmd[O6_Num_Motors:] = pose
+            if side in ("left", "both"):
+                self._joint_cmd[:O6_Num_Motors] = pose
         time.sleep(2)
 
     def _subscribe_state(self):

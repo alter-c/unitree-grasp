@@ -40,7 +40,7 @@ class YOLODetector:
         self.capture_ready = mp.Event()
         self.depth_scale = 0.001
 
-        self.interested_classes = ["bottle", "orange", "person"]
+        self.interested_classes = ["bottle", "orange", "apple", "person"]
 
     def start(self):
         if self.is_running.value:
@@ -235,6 +235,7 @@ if __name__ == "__main__":
         detector = YOLODetector("./models/yolov8s-seg.pt", True)
         detector.start()
         while True:
+            print(detector.get_latest_detections())
             time.sleep(1)
     except KeyboardInterrupt:
         print("[YOLODetector] Interrupted by user, shutting down...")

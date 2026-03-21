@@ -7,7 +7,7 @@ executor = ActionExecutor()
 detector = YOLODetector("./models/yolov8s-seg.pt", False)
 detector.start()
 
-target_class = "bottle"
+target_class = "orange"
 
 
 if __name__ == "__main__":
@@ -21,7 +21,7 @@ if __name__ == "__main__":
                     break
                 time.sleep(1)
 
-            input("Press any key to continue.")
+            # input("Press any key to continue.")
             
             # Step 2: Move to expected distance
             cur_dis = coords[0]
@@ -40,9 +40,9 @@ if __name__ == "__main__":
                     break
                 time.sleep(1)
                 
-            input("Press any key to continue.")
+            # input("Press any key to continue.")
             suc = executor.grasp(coords)
-            input("Press any key to continue.")
+            # input("Press any key to continue.")
 
             if suc:
                 # Step 4: Execute other action

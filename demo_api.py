@@ -33,13 +33,13 @@ def unitree_grasp(target: str=None):
             time.sleep(1)
         # coords = [0.36, -0.1, 0.1]
 
-        input("Check and Press any key to continue.")
+        # input("Check and Press any key to continue.")
 
         # Step 2: Move to expected distance
         cur_dis = coords[0]
         expect_dis = 0.4
         if cur_dis > expect_dis:
-            executor.move_forward(cur_dis-expect_dis)
+            executor.move_forward(cur_dis-expect_dis+0.1)
         else:
             print("Already within expected distance.")
 
@@ -56,7 +56,7 @@ def unitree_grasp(target: str=None):
             time.sleep(1)
         # coords = [0.36, -0.1, 0.1]
 
-        input("Check and Press any key to continue.")
+        # input("Check and Press any key to continue.")
         suc = executor.grasp(coords)
 
         if suc:
@@ -87,7 +87,7 @@ def unitree_regrasp(target: str=None):
             time.sleep(1)
         # coords = [0.36, -0.1, 0.1]
 
-        input("Check and Press any key to continue.")
+        # input("Check and Press any key to continue.")
     
         suc = executor.regrasp(coords)
         if suc:
@@ -127,7 +127,7 @@ def unitree_handover():
 
         # Step 2: Move to expected distance
         cur_dis = coords[0]
-        expect_dis = 0.8
+        expect_dis = 0.6
         if cur_dis > expect_dis:
             executor.move_forward(cur_dis-expect_dis)
         else:
@@ -152,6 +152,14 @@ def unitree_stop():
         return JSONResponse(status_code=200, content={"message": "Stop success."})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/unitree/stop_move")
+def unitree_stop_move():
+    try:
+        executor.stop_move()
+        return JSONResponse(status_code=200, content={"message": "Stop move success."})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})  
 
 
 if __name__ == "__main__":
