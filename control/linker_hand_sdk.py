@@ -48,9 +48,9 @@ class O6_DirectJointController:
         )
         # 初始化常量
         self._POSE_RELEASE = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]    # 全部伸直复位
-        self._POSE_OPEN    = [0.8, 0.1, 1.0, 1.0, 1.0, 1.0]    # 拇指侧摆内收，其余伸直
+        self._POSE_OPEN    = [0.8, 0.0, 1.0, 1.0, 1.0, 1.0]    # 拇指侧摆内收，其余伸直
         # self._POSE_CLOSE   = [0.5, 0.1, 0.25, 0.25, 0.25, 0.25]  # 弯曲约 75%，用于抓取
-        self._POSE_CLOSE   = [0.7, 0.1, 0.7, 0.7, 0.7, 0.7]  # 弯曲约 75%，用于抓取
+        self._POSE_CLOSE   = [0.5, 0.0, 0.7, 0.7, 0.7, 0.7]  # 弯曲约 75%，用于抓取
 
         self._HAND_SIDES = ("left", "right", "both")
         self.object_hand = None
@@ -62,7 +62,7 @@ class O6_DirectJointController:
         # ── 关节指令共享数组 [左手×6, 右手×6]，初始全部伸直 ─────────────────
         self._joint_cmd = Array('d', O6_Num_Motors * 2, lock=True)
         with self._joint_cmd.get_lock():
-            self._joint_cmd[:] = self._POSE_RELEASE * 2
+            self._joint_cmd[:] = self._POSE_CLOSE * 2
 
         # ── 关节状态共享数组（硬件反馈，归一化 [0,1]）────────────────────────
         self._left_state  = Array('d', O6_Num_Motors, lock=True)
@@ -266,12 +266,13 @@ class O6_DirectJointController:
 if __name__ == '__main__':
 
     ctrl = O6_DirectJointController(
-        left_can_port=None,       # None = 不启用左手
+        left_can_port="can1",       # None = 不启用左手
         right_can_port="can0",
         fps=50.0,
     )
 
     try:
+        ctrl.close_hand("left")
         ctrl.open_hand("right")
         ctrl.close_hand("right")
         ctrl.open_hand("right")

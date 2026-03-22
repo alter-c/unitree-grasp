@@ -187,6 +187,8 @@ class Custom:
         print("[ArmController] Release Done!")
 
         self.Stop()
+        self.arm_sdk_publisher.Close()
+        time.sleep(1)
 
 
 if __name__ == '__main__':

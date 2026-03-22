@@ -1,10 +1,23 @@
 import time
 import sys
 import argparse
-
+import requests
 
 from action_executor import ActionExecutor
-from yolo_detector import YOLODetector
+
+DETECTOR_URL = "http://127.0.0.1:50022"
+
+def get_interested_detection(target: str):
+    try:
+        resp = requests.get(f"{DETECTOR_URL}/detect/{target}", timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("success"):
+                return data["result"]
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"[Unitree] HTTP request failed: {e}")
+        return None
 
 def parse_arg():
     parser = argparse.ArgumentParser(description="use sdk to grasp")
@@ -13,28 +26,35 @@ def parse_arg():
         type=str,
         help='target object class to grasp'
     )
+    parser.add_argument(
+        '--detector-url',
+        type=str,
+        default=DETECTOR_URL,
+        help='YOLODetector service URL (default: http://127.0.0.1:8000)'
+    )
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
-    executor = ActionExecutor()
-    detector = YOLODetector("./models/yolov8s-seg.pt", False)
-    detector.start()
+    args = parse_arg()
+    target = args.target
+    DETECTOR_URL = args.detector_url
 
-    try:    
-        args = parse_arg()
-        target = args.target
+    executor = ActionExecutor()
+
+    try:
         if target is None:
             print("[Unitree] Grasp failed: No target provided")
-            raise
+            raise ValueError("No target provided")
 
         # Step 1: Detect objects
         while True:
-            detection = detector.get_interested_detection(target)
+            detection = get_interested_detection(target)
             if detection:
                 coords = detection["world"]
                 if coords[0] > 1.0:
                     print(f"Detected object is too far for grasp.")
+                    time.sleep(1)
                     continue
                 else:
                     break
@@ -44,17 +64,18 @@ if __name__ == "__main__":
         cur_dis = coords[0]
         expect_dis = 0.4
         if cur_dis > expect_dis:
-            executor.move_forward(cur_dis-expect_dis+0.1)
+            executor.move_forward(cur_dis - expect_dis + 0.1)
         else:
             print("Already within expected distance.")
 
         # Step 3: Execute grasping action
         while True:
-            detection = detector.get_interested_detection(target)
+            detection = get_interested_detection(target)
             if detection:
                 coords = detection["world"]
                 if coords[0] > 1.0:
                     print(f"Detected object is too far for grasp.")
+                    time.sleep(1)
                     continue
                 else:
                     break
@@ -68,6 +89,3 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"[Unitree] Grasp failed: An error occurred: {e}")
-
-    finally:
-        detector.stop()
